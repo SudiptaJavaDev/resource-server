@@ -1,11 +1,14 @@
 package com.cloud.ecommerce.resourceserver.config;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -14,8 +17,13 @@ import java.util.Arrays;
 import java.util.Collections;
 @Configuration
 public class ProjectSecurityConfig {
+
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+    private String issuerUri;
     @Bean
     public SecurityFilterChain configureSecurity(HttpSecurity http) throws Exception {
+
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
 
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
@@ -45,12 +53,21 @@ public class ProjectSecurityConfig {
                             "/api/basket/**",
                             "/api/basket/allBaskets"
                         ).permitAll()
-                        .anyRequest().authenticated()
-                )
-                .csrf(AbstractHttpConfigurer::disable);
+                        .requestMatchers("/api/orders").authenticated())
+                        .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter)
+                        )
+                );
+                //.csrf(AbstractHttpConfigurer::disable);
         //.requestMatchers("/api/shop/categories").authenticated());
         // .httpBasic(Customizer.withDefaults())
         //.formLogin(Customizer.withDefaults());
         return http.build();
     }
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        return NimbusJwtDecoder.withJwkSetUri(issuerUri + "/protocol/openid-connect/certs").build();
+    }
+
 }

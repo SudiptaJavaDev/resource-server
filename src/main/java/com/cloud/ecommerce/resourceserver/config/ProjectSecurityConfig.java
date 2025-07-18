@@ -24,7 +24,7 @@ public class ProjectSecurityConfig {
     public SecurityFilterChain configureSecurity(HttpSecurity http) throws Exception {
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConveter());
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
                     @Override
@@ -53,7 +53,7 @@ public class ProjectSecurityConfig {
                             "/api/basket/**",
                             "/api/basket/allBaskets"
                         ).permitAll()
-                        .requestMatchers("/api/orders").authenticated())
+                        .requestMatchers("/api/orders").hasRole("ADMIN"))
                         .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter)

@@ -70,6 +70,10 @@ public class BasketService implements IBasketService {
                 }
             }
         }
+
+       catch (Exception e) {
+            throw new BasketNotFoundException("Basket not found",e);
+        }
         
         return baskets;
     }
